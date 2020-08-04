@@ -2,14 +2,12 @@
 using APICatalogo.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
-namespace APICatalogo.Controllers
+namespace ApiCatalogo.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/[Controller]")]
     [ApiController]
     public class ProdutosController : ControllerBase
     {
@@ -19,42 +17,62 @@ namespace APICatalogo.Controllers
             _context = contexto;
         }
 
+        // api/produtos
         [HttpGet]
         public ActionResult<IEnumerable<Produto>> Get()
         {
-            return _context.Produtos.AsNoTracking().ToList();
+            //AsNoTracking desabilita o gerenciamento do estado das entidades
+            //so deve ser usado em consultas sem alteração
+            //return _context.Produtos.AsNoTracking().ToList();
+            return _context.Produtos.ToList();
         }
-        [HttpGet("{id}",Name = "ObterProduto")]
+
+        // api/produtos/1
+        [HttpGet("{id}", Name = "ObterProduto")]
         public ActionResult<Produto> Get(int id)
         {
-            var produto = _context.Produtos.AsNoTracking().FirstOrDefault(p => p.ProdutoId == id);
-            if(produto == null)
+            //AsNoTracking desabilita o gerenciamento do estado das entidades
+            //so deve ser usado em consultas sem alteração
+            //var produto = _context.Produtos.AsNoTracking()
+            //    .FirstOrDefault(p => p.ProdutoId == id);
+            var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
+
+            if (produto == null)
             {
                 return NotFound();
             }
             return produto;
         }
+
+        //  api/produtos
         [HttpPost]
         public ActionResult Post([FromBody]Produto produto)
         {
-            //if (!ModelState.IsValid)
-            //{
-            //    return BadRequest(ModelState);
-            //}
+            //a validação do ModelState é feito automaticamente
+            //quando aplicamos o atributo [ApiController]
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             _context.Produtos.Add(produto);
             _context.SaveChanges();
-            return new CreatedAtRouteResult("ObterProduto", new { id = produto.ProdutoId }, produto);
 
+            return new CreatedAtRouteResult("ObterProduto",
+                new { id = produto.ProdutoId }, produto);
         }
 
+        // api/produtos/1
         [HttpPut("{id}")]
-        public ActionResult Put(int id,[FromBody] Produto produto)
+        public ActionResult Put(int id, [FromBody] Produto produto)
         {
-            //if (!ModelState.IsValid)
+            //a validação do ModelState é feito automaticamente
+            //quando aplicamos o atributo [ApiController]
+            //if(!ModelState.IsValid)
             //{
             //    return BadRequest(ModelState);
             //}
-            if(id != produto.ProdutoId)
+            if (id != produto.ProdutoId)
             {
                 return BadRequest();
             }
@@ -64,21 +82,23 @@ namespace APICatalogo.Controllers
             return Ok();
         }
 
+        //  api/produtos/1
         [HttpDelete("{id}")]
         public ActionResult<Produto> Delete(int id)
         {
-            var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
+            // Usar o método Find é uma opção para localizar 
+            // o produto pelo id (não suporta AsNoTracking)
             //var produto = _context.Produtos.Find(id);
+            var produto = _context.Produtos.FirstOrDefault(p => p.ProdutoId == id);
+
             if (produto == null)
             {
                 return NotFound();
             }
+
             _context.Produtos.Remove(produto);
             _context.SaveChanges();
             return produto;
-
         }
-
-
     }
 }
